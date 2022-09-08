@@ -35,7 +35,7 @@ class StockCrawling:
 
 if __name__ == '__main__':
     # To ill stock IDs that you want.
-    data = pd.read_csv("./StockID/化學類.csv")
+    data = pd.read_csv("./NewListedStockID/All.csv")
     stock_ids = [ str(i) for i in data['代碼'].to_list() ]
     crawling = StockCrawling()
     try:
