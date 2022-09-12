@@ -178,7 +178,7 @@ if __name__ == '__main__':
         times = 1
         while True:
             now = dt.datetime.now()
-            if now > STOP_TIME:
+            if now < STOP_TIME:
                 # data = crawling.show_realtime(*stock_ids, stock_type=stock_type)
                 if times == 1:
                     data = crawling.show_realtime(*stock_ids_1,stock_type=stock_type_1)
@@ -216,7 +216,7 @@ if __name__ == '__main__':
                     data = crawling.show_realtime(*stock_ids_17,stock_type=stock_type_17)
                 
                 crawling.insert_sql(data)
-                _sleep_time = 5
+                _sleep_time = 3
                 # sleep
                 time.sleep(_sleep_time)
                 print("====== " + time.strftime("%H:%M:%S") + " ======")
