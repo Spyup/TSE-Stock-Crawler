@@ -27,9 +27,21 @@ class StockCrawling:
                channels = '|'.join('otc_{}.tw'.format(target_tse) for target_tse in stock_id)
         query_url = '{}?&ex_ch={}&json=1&delay=0&_={}'.format(twse_url, channels, timestamp)
 
-        headers = {'Accept-Language': 'zh-TW',
-                   'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36',
-                   }
+        # headers = {'Accept-Language': 'zh-TW',
+        #            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36',
+        #            }
+
+        headers = {
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                    "Host": "http://mis.twse.com.tw/stock/index.jsp",
+                    "Sec-Fetch-Dest": "document",
+                    "Sec-Fetch-Mode": "navigate",
+                    "Sec-Fetch-Site": "cross-site",
+                    "Upgrade-Insecure-Requests": "1",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
+                    }
 
         self.req.get('http://mis.twse.com.tw/stock/index.jsp', headers=headers)
         response = self.req.get(query_url)
@@ -94,31 +106,33 @@ class StockCrawling:
                 if(s_dict['z']!='-'):
                     s_dict['z'] = float(s_dict['z'])
                 else:
-                    s_dict['z'] = "NULL"
+                    s_dict['z'] = -1
                 if(s_dict['tv']!='-'):
                     s_dict['tv'] = float(s_dict['tv'])
                 else:
-                    s_dict['tv'] = "NULL"
+                    s_dict['tv'] = -1
                 if(s_dict['h']!='-'):
                     s_dict['h'] = float(s_dict['h'])
                 else:
-                    s_dict['h'] = "NULL"
+                    s_dict['h'] = -1
                 if(s_dict['l']!='-'):
                     s_dict['l'] = float(s_dict['l'])
                 else:
-                    s_dict['l'] = "NULL"
+                    s_dict['l'] = -1
                 if(s_dict['o']!='-'):
                     s_dict['o'] = float(s_dict['o'])
                 else:
-                    s_dict['o'] = "NULL"
+                    s_dict['o'] = -1
                 if(s_dict['v']!='-'):
                     s_dict['v'] = float(s_dict['v'])
                 else:
-                    s_dict['v'] = "NULL"
+                    s_dict['v'] = -1
                 records.append([_ct, _dt, _t, s_dict['c'], s_dict['n'], s_dict['z'], s_dict['tv'],
                 s_dict['h'], s_dict['l'], float(s_dict['y']), float(s_dict['o']), int(s_dict['v'])])              
             except ValueError as _e:
-                print("ValueErr : " + str(_e))
+                print("ID : " + str(s_dict['c'])+"，ValueErr : " + str(_e))
+            except KeyError as _e:
+                print("ID : " + str(s_dict['c'])+"，KeyErr : " + str(_e))
         try:
             cursor.executemany(sql, records)
             self.db.commit()
@@ -170,7 +184,7 @@ if __name__ == '__main__':
     stock_type_16 = stock_type[1601:1700]
     stock_type_17 = stock_type[1701:]
     STOP_TIME_HOUR = 13
-    STOP_TIME_MINUTE = 40
+    STOP_TIME_MINUTE = 32
     NOW_DATE = dt.datetime.now()
     STOP_TIME = dt.datetime(year=NOW_DATE.year,month=NOW_DATE.month,day=NOW_DATE.day,hour=STOP_TIME_HOUR, minute=STOP_TIME_MINUTE)
     crawling = StockCrawling()
@@ -216,7 +230,7 @@ if __name__ == '__main__':
                     data = crawling.show_realtime(*stock_ids_17,stock_type=stock_type_17)
                 
                 crawling.insert_sql(data)
-                _sleep_time = 3
+                _sleep_time = random.randint(1, 5)
                 # sleep
                 time.sleep(_sleep_time)
                 print("====== " + time.strftime("%H:%M:%S") + " ======")
