@@ -2,6 +2,12 @@ import time,requests,json,random
 import pandas as pd
 import datetime as dt
 import pymysql
+import logging
+
+#log
+logging.basicConfig(level=logging.DEBUG, filename='Stock_0908_Log.log', filemode='a')
+startTime = dt.datetime.now()
+logging.debug("Start from "+str(startTime))
 
 class StockCrawling:
     req = None
@@ -131,20 +137,25 @@ class StockCrawling:
                 s_dict['h'], s_dict['l'], float(s_dict['y']), float(s_dict['o']), int(s_dict['v'])])              
             except ValueError as _e:
                 print("ID : " + str(s_dict['c'])+"，ValueErr : " + str(_e))
+                logging.error("Catch an exception.ID :"+ str(s_dict['c']), exc_info=True)
+
             except KeyError as _e:
                 print("ID : " + str(s_dict['c'])+"，KeyErr : " + str(_e))
+                logging.error("Catch an exception.ID :"+ str(s_dict['c']), exc_info=True)
+
         try:
             cursor.executemany(sql, records)
             self.db.commit()
             print(cursor.rowcount, "Record inserted successfully into python_users table")
         except pymysql.Error as _e:
             print("Failed inserting record into python_users table {}".format(_e))
+            logging.error("Catch an exception.ID ", exc_info=True)
         finally:
             cursor.close()
 
 if __name__ == '__main__':
     # To ill stock IDs that you want.
-    data = pd.read_csv("./stock_id_all.csv")
+    data = pd.read_csv("C:/Users/Administrator/Documents/TSE-Stock-Crawler/stock_id_all.csv")
     stock_ids = [ str(i) for i in data['代碼'].to_list() ]
     stock_type = [ str(i) for i in data['櫃別'].to_list() ]
 
@@ -192,7 +203,7 @@ if __name__ == '__main__':
         times = 1
         while True:
             now = dt.datetime.now()
-            if now < STOP_TIME:
+            if now > STOP_TIME:
                 # data = crawling.show_realtime(*stock_ids, stock_type=stock_type)
                 if times == 1:
                     data = crawling.show_realtime(*stock_ids_1,stock_type=stock_type_1)
@@ -238,8 +249,14 @@ if __name__ == '__main__':
                 if times == 18:
                     times = 1
             else:
+                print("Not in active working time.")
+                logging.debug('Not in active working time.')
                 break
     except pymysql.Error as e:
         print("Failed inserting record into python_users table {}".format(e))
+        logging.error("Catch an exception.", exc_info=True)
     finally:
         del crawling
+
+
+
