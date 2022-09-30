@@ -103,6 +103,7 @@ class StockCrawling:
         records = []
         stock_dict_data = stock_dict[0]
         stock_dict_time = stock_dict[1]
+        print(stock_dict_time)
         _ct = dt.datetime.strptime(stock_dict_time,'%H:%M:%S').time().strftime('%H:%M:%S')
 
         for s_dict in stock_dict_data:
