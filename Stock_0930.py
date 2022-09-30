@@ -88,16 +88,18 @@ class StockCrawling:
         print(stock_dict_time)
         print(type(stock_dict_time))
         _ct = dt.datetime.strptime(stock_dict_time,'%H:%M:%S').time().strftime('%H:%M:%S')
-
+        cursor = self.db.cursor()
         for s_dict in stock_dict_data:
             try:
                 _dt = dt.datetime.strptime(s_dict['d'], "%Y%m%d").date().strftime('%Y-%m-%d')
                 _t = dt.datetime.strptime(s_dict['t'], '%H:%M:%S').time().strftime('%H:%M:%S')
                 if(self.search_sql(database, _dt, _t, s_dict['c'])):
-                    sql_price = "SELECT price FROM {db}.important_stock WHERE sdate=`{sdate}` AND sid={sid} ORDER BY stime DESC".format(db=database, sdate=_dt, sid=s_dict['c'])
-                    cursor.execute(sql_price)
-                    last_price = cursor.fetchall()
-                    print(last_price[0])
+                    sql_price = "SELECT price FROM {db}.important_stock WHERE sdate='{sdate}' AND sid='{sid}' ORDER BY catchtime DESC".format(db=database, sdate=_dt, sid=s_dict['c'])
+                    count_price = cursor.execute(sql_price)
+                    if(count_price>0):
+                        last_price = cursor.fetchall()
+                        s_dict['z'] = float(last_price[0][0])
+                        print(last_price[0][0])
                     if(s_dict['z']!='-'):
                         s_dict['z'] = float(s_dict['z'])
                     else:
@@ -134,7 +136,7 @@ class StockCrawling:
 
             except ValueError as _e:
                 print("ValueErr : " + str(_e))
-        cursor = self.db.cursor()
+        
         try:
             cursor.executemany(sql, records)
             self.db.commit()
@@ -146,7 +148,7 @@ class StockCrawling:
 
     def search_sql(self,database,_dt,_t,stockID):
         search_cursor = self.db.cursor()
-        sql_same_time = "SELECT * FROM {db}.important_stock WHERE `sdate`={sdate} AND `stime`=`{stime}` AND `sid`={sid}".format(db=database, sdate=_dt, stime=_t, sid=stockID)
+        sql_same_time = "SELECT * FROM {db}.important_stock WHERE `sdate`='{sdate}' AND stime='{stime}' AND `sid`='{sid}'".format(db=database, sdate=_dt, stime=_t, sid=stockID)
         count = search_cursor.execute(sql_same_time)
         search_cursor.close()
         if(count!=0):
