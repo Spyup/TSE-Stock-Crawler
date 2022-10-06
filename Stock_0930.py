@@ -20,11 +20,6 @@ class StockCrawling:
         twse_url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp'
         timestamp = int(time.time() * 1000)
         channels = '|'.join('tse_{}.tw'.format(target_tse) for target_tse in stock_id)
-        #for target in stock_type:
-        #    if(target=='上市'):
-        #        channels = '|'.join('tse_{}.tw'.format(target_tse) for target_tse in stock_id)
-        #    elif(target=='上櫃'):
-        #        channels = '|'.join('otc_{}.tw'.format(target_tse) for target_tse in stock_id)
         query_url = '{}?&ex_ch={}&json=1&delay=0&_={}'.format(twse_url, channels, timestamp)
 
         headers = {'Accept-Language': 'zh-TW',
@@ -85,8 +80,6 @@ class StockCrawling:
         records = []
         stock_dict_data = stock_dict[0]
         stock_dict_time = stock_dict[1]
-        print(stock_dict_time)
-        print(type(stock_dict_time))
         _ct = dt.datetime.strptime(stock_dict_time,'%H:%M:%S').time().strftime('%H:%M:%S')
         cursor = self.db.cursor()
         for s_dict in stock_dict_data:
@@ -98,12 +91,11 @@ class StockCrawling:
                     count_price = cursor.execute(sql_price)
                     if(count_price>0):
                         last_price = cursor.fetchall()
-                        s_dict['z'] = float(last_price[0][0])
                         print(last_price[0][0])
                     if(s_dict['z']!='-'):
                         s_dict['z'] = float(s_dict['z'])
                     else:
-                        s_dict['z'] = "NULL"
+                        s_dict['z'] = float(last_price[0][0])
 
                     if(s_dict['tv']!='-'):
                         s_dict['tv'] = float(s_dict['tv'])
