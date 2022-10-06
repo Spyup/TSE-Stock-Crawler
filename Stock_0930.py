@@ -16,6 +16,7 @@ class StockCrawling:
         self.close_db()
 
     #def show_realtime(self, *stock_id, stock_type):
+    # catch Stock Info
     def show_realtime(self, *stock_id):
         twse_url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp'
         timestamp = int(time.time() * 1000)
@@ -84,11 +85,14 @@ class StockCrawling:
         cursor = self.db.cursor()
         for s_dict in stock_dict_data:
             try:
+                # Format datetime type
                 _dt = dt.datetime.strptime(s_dict['d'], "%Y%m%d").date().strftime('%Y-%m-%d')
                 _t = dt.datetime.strptime(s_dict['t'], '%H:%M:%S').time().strftime('%H:%M:%S')
+                # Check whether has same time's data
                 if(self.search_sql(database, _dt, _t, s_dict['c'])):
                     sql_price = "SELECT price FROM {db}.important_stock WHERE sdate='{sdate}' AND sid='{sid}' ORDER BY catchtime DESC".format(db=database, sdate=_dt, sid=s_dict['c'])
                     count_price = cursor.execute(sql_price)
+                    # Catch the stock last price, if the price is zero, then replace it
                     if(count_price>0):
                         last_price = cursor.fetchall()
                         print(last_price[0][0])
