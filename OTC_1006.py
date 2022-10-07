@@ -96,14 +96,16 @@ class StockCrawling:
                 if(self.search_sql(database, _dt, _t, s_dict['c'])):
                     sql_price = "SELECT price FROM {db}.otc_important_stock WHERE sdate='{sdate}' AND sid='{sid}' ORDER BY catchtime DESC".format(db=database, sdate=_dt, sid=s_dict['c'])
                     count_price = cursor.execute(sql_price)
+                    last_price = "NULL"
                     if(count_price>0):
                         last_price = cursor.fetchall()
-                        print(last_price[0][0])
-                        
+                        last_price = float(last_price[0][0])
+                        print(last_price)
+
                     if(s_dict['z']!='-'):
                         s_dict['z'] = float(s_dict['z'])
                     else:
-                        s_dict['z'] = float(last_price[0][0])
+                        s_dict['z'] = last_price
 
                     if(s_dict['tv']!='-'):
                         s_dict['tv'] = float(s_dict['tv'])
