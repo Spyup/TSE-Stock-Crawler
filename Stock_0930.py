@@ -170,7 +170,7 @@ if __name__ == '__main__':
         times = 1
         while True:
             now = dt.datetime.now()
-            if now > STOP_TIME:
+            if now < STOP_TIME:
                 if times == 1:
                     data = crawling.show_realtime(*stock_ids_1)
                 elif times == 2:

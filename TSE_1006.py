@@ -106,12 +106,11 @@ class StockCrawling:
                     count_price = cursor.execute(sql_price)
                     if(count_price>0):
                         last_price = cursor.fetchall()
-                        s_dict['z'] = float(last_price[0][0])
                         print(last_price[0][0])
                     if(s_dict['z']!='-'):
                         s_dict['z'] = float(s_dict['z'])
                     else:
-                        s_dict['z'] = "NULL"
+                        s_dict['z'] = float(last_price[0][0])
 
                     if(s_dict['tv']!='-'):
                         s_dict['tv'] = float(s_dict['tv'])
