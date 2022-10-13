@@ -146,6 +146,8 @@ class StockCrawling:
 
             except ValueError as _e:
                 print("ValueErr : " + str(_e))
+            except KeyError as _e:
+                print("ID : " + str(s_dict['c'])+"，KeyErr : " + str(_e))
         
         try:
             cursor.executemany(sql, records)

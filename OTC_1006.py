@@ -27,9 +27,17 @@ class StockCrawling:
         #        channels = '|'.join('otc_{}.tw'.format(target_tse) for target_tse in stock_id)
         query_url = '{}?&ex_ch={}&json=1&delay=0&_={}'.format(twse_url, channels, timestamp)
 
-        headers = {'Accept-Language': 'zh-TW',
-                   'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36',
-                   }
+        headers = {
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                    "Host": "http://mis.twse.com.tw/stock/index.jsp",
+                    "Sec-Fetch-Dest": "document",
+                    "Sec-Fetch-Mode": "navigate",
+                    "Sec-Fetch-Site": "cross-site",
+                    "Upgrade-Insecure-Requests": "1",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
+                    }
 
         self.req.get('http://mis.twse.com.tw/stock/index.jsp', headers=headers)
         response = self.req.get(query_url)
@@ -138,6 +146,8 @@ class StockCrawling:
 
             except ValueError as _e:
                 print("ValueErr : " + str(_e))
+            except KeyError as _e:
+                print("ID : " + str(s_dict['c'])+"，KeyErr : " + str(_e))
         
         try:
             cursor.executemany(sql, records)
