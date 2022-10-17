@@ -22,6 +22,7 @@ class StockCrawling:
 
     def __init__(self):
         self.req = requests.session()
+        self.dbName = "stocktest"
         self.dbtable = ""
         #self.init_db()
 
@@ -56,7 +57,7 @@ class StockCrawling:
             host="127.0.0.1",  # 主機名
             user="thu",  # 用戶名
             passwd="Thu@201905",  # 密碼
-            db="stocktest",  # 數據庫名稱
+            db=self.dbName,  # 數據庫名稱
             charset="utf8")
 
     def close_db(self):
@@ -83,7 +84,7 @@ class StockCrawling:
         if stock_dict is None:
             return None
 
-        sql = "INSERT IGNORE INTO stocktest.{table} (catchtime, sdate, stime, sid, sname, price, thisamount, high, low, yesterday, open, amount) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)".format(table=self.dbtable)
+        sql = "INSERT IGNORE INTO {db}.{table} (catchtime, sdate, stime, sid, sname, price, thisamount, high, low, yesterday, open, amount) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)".format(db=self.dbName,table=self.dbtable)
         records = []
         stock_dict_data = stock_dict[0]
         stock_dict_time = stock_dict[1]
@@ -96,7 +97,7 @@ class StockCrawling:
                 _t = dt.datetime.strptime(s_dict['t'], '%H:%M:%S').time().strftime('%H:%M:%S')
                 # Check whether has same time's data
                 if(self.search_sql(_t, s_dict['c'])):
-                    sql_price = "SELECT price FROM stocktest.{table} WHERE sid='{sid}' ORDER BY catchtime DESC".format(table=self.dbtable, sid=s_dict['c'])
+                    sql_price = "SELECT price FROM {db}.{table} WHERE sid='{sid}' ORDER BY catchtime DESC".format(db=self.dbName,table=self.dbtable, sid=s_dict['c'])
                     count_price = cursor.execute(sql_price)
                     last_price = "NULL"
                     # Catch the stock last price, if the price is zero, then replace it
@@ -155,7 +156,7 @@ class StockCrawling:
 
     def search_sql(self,_t,stockID):
         search_cursor = self.db.cursor()
-        sql_same_time = "SELECT * FROM stocktest.{table} WHERE stime='{stime}' AND `sid`='{sid}'".format(table=self.dbtable, stime=_t, sid=stockID)
+        sql_same_time = "SELECT * FROM {db}.{table} WHERE stime='{stime}' AND `sid`='{sid}'".format(db=self.dbName,table=self.dbtable, stime=_t, sid=stockID)
         count = search_cursor.execute(sql_same_time)
         search_cursor.close()
         if(count!=0):
