@@ -66,11 +66,11 @@ class StockCrawling:
 
     def create_table(self):
         cursor = self.db.cursor()
-        sql_create = "CREATE TABLE `{table}` (`ID` bigint(20) NOT NULL, `catchtime` time NOT NULL, `sdate` date NOT NULL, `stime` time NOT NULL, `sid` varchar(10) NOT NULL, `sname` varchar(20) NOT NULL, `price` float DEFAULT NULL, `thisamount` float DEFAULT NULL, `high` float DEFAULT NULL, `low` float DEFAULT NULL, `yesterday` float DEFAULT NULL, `open` float DEFAULT NULL, `amount` float DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;".format(table=self.dbtable)
-        sql_key = "ALTER TABLE `{table}` ADD PRIMARY KEY (`ID`);".format(table=self.dbtable)
-        sql_AI = "ALTER TABLE `{table}` MODIFY `ID` bigint(20) NOT NULL AUTO_INCREMENT;".format(table=self.dbtable)
-        sql_check = "SET FOREIGN_KEY_CHECKS=1;"
-        if(cursor.execute(sql_create) and cursor.execute(sql_key) and cursor.execute(sql_AI) and cursor.execute(sql_check)):
+        sql_create = "CREATE TABLE `{table}` (`ID` bigint(20) NOT NULL AUTO_INCREMENT, `catchtime` time NOT NULL, `sdate` date NOT NULL, `stime` time NOT NULL, `sid` varchar(10) NOT NULL, `sname` varchar(20) NOT NULL, `price` float DEFAULT NULL, `thisamount` float DEFAULT NULL, `high` float DEFAULT NULL, `low` float DEFAULT NULL, `yesterday` float DEFAULT NULL, `open` float DEFAULT NULL, `amount` float DEFAULT NULL, PRIMARY KEY (`ID`)) ENGINE=InnoDB DEFAULT CHARSET=utf8;".format(table=self.dbtable)
+        #sql_key = "ALTER TABLE `{table}` ADD ;".format(table=self.dbtable)
+        #sql_AI = "ALTER TABLE `{table}` MODIFY `ID` bigint(20) NOT NULL ;".format(table=self.dbtable)
+        #sql_check = "SET FOREIGN_KEY_CHECKS=1;"
+        if(cursor.execute(sql_create)):
             self.db.commit()
             return True
         return False
