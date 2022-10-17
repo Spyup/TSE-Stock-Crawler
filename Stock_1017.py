@@ -24,7 +24,7 @@ class StockCrawling:
         self.req = requests.session()
         self.dbName = "stocktest"
         self.dbtable = ""
-        #self.init_db()
+        self.init_db()
 
     def __del__(self):
         self.req.close()
@@ -69,11 +69,10 @@ class StockCrawling:
         sql_create = "CREATE TABLE {table} (`ID` bigint(20) NOT NULL, `catchtime` time NOT NULL, `sdate` date NOT NULL, `stime` time NOT NULL, `sid` varchar(10) NOT NULL, `sname` varchar(20) NOT NULL, `price` float DEFAULT NULL, `thisamount` float DEFAULT NULL, `high` float DEFAULT NULL, `low` float DEFAULT NULL, `yesterday` float DEFAULT NULL, `open` float DEFAULT NULL, `amount` float DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;".format(table=self.dbtable)
         sql_key = "ALTER TABLE {table} ADD PRIMARY KEY (`ID`);".format(table=self.dbtable)
         sql_AI = "ALTER TABLE {table} MODIFY `ID` bigint(20) NOT NULL AUTO_INCREMENT;".format(table=self.dbtable)
-        if(cursor.execute(sql_create)):
-            if(cursor.execute(sql_key)):
-                if(cursor.execute(sql_AI)):
-                    self.db.commit()
-                    return True
+        sql_check = "SET FOREIGN_KEY_CHECKS=1;"
+        if(cursor.execute(sql_create) and cursor.execute(sql_key) and cursor.execute(sql_AI) and cursor.execute(sql_check)):
+            self.db.commit()
+            return True
         return False
 
     def insert_sql(self, stock_dict):
@@ -84,7 +83,7 @@ class StockCrawling:
         if stock_dict is None:
             return None
 
-        sql = "INSERT IGNORE INTO {db}.{table} (catchtime, sdate, stime, sid, sname, price, thisamount, high, low, yesterday, open, amount) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)".format(db=self.dbName,table=self.dbtable)
+        sql = "INSERT IGNORE INTO {table} (catchtime, sdate, stime, sid, sname, price, thisamount, high, low, yesterday, open, amount) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)".format(table=self.dbtable)
         records = []
         stock_dict_data = stock_dict[0]
         stock_dict_time = stock_dict[1]
@@ -97,7 +96,7 @@ class StockCrawling:
                 _t = dt.datetime.strptime(s_dict['t'], '%H:%M:%S').time().strftime('%H:%M:%S')
                 # Check whether has same time's data
                 if(self.search_sql(_t, s_dict['c'])):
-                    sql_price = "SELECT price FROM {db}.{table} WHERE sid='{sid}' ORDER BY catchtime DESC".format(db=self.dbName,table=self.dbtable, sid=s_dict['c'])
+                    sql_price = "SELECT price FROM {table} WHERE sid='{sid}' ORDER BY catchtime DESC".format(table=self.dbtable, sid=s_dict['c'])
                     count_price = cursor.execute(sql_price)
                     last_price = "NULL"
                     # Catch the stock last price, if the price is zero, then replace it
@@ -156,7 +155,7 @@ class StockCrawling:
 
     def search_sql(self,_t,stockID):
         search_cursor = self.db.cursor()
-        sql_same_time = "SELECT * FROM {db}.{table} WHERE stime='{stime}' AND `sid`='{sid}'".format(db=self.dbName,table=self.dbtable, stime=_t, sid=stockID)
+        sql_same_time = "SELECT * FROM {table} WHERE stime='{stime}' AND `sid`='{sid}'".format(table=self.dbtable, stime=_t, sid=stockID)
         count = search_cursor.execute(sql_same_time)
         search_cursor.close()
         if(count!=0):
