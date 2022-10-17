@@ -20,11 +20,6 @@ class StockCrawling:
         twse_url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp'
         timestamp = int(time.time() * 1000)
         channels = '|'.join('tse_{}.tw'.format(target_tse) for target_tse in stock_id)
-        #for target in stock_type:
-        #    if(target=='上市'):
-        #        channels = '|'.join('tse_{}.tw'.format(target_tse) for target_tse in stock_id)
-        #    elif(target=='上櫃'):
-        #        channels = '|'.join('otc_{}.tw'.format(target_tse) for target_tse in stock_id)
         query_url = '{}?&ex_ch={}&json=1&delay=0&_={}'.format(twse_url, channels, timestamp)
 
         headers = {

@@ -15,16 +15,10 @@ class StockCrawling:
         self.req.close()
         self.close_db()
 
-    #def show_realtime(self, *stock_id, stock_type):
     def show_realtime(self, *stock_id):
         twse_url = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp'
         timestamp = int(time.time() * 1000)
         channels = '|'.join('otc_{}.tw'.format(target_tse) for target_tse in stock_id)
-        #for target in stock_type:
-        #    if(target=='上市'):
-        #        channels = '|'.join('tse_{}.tw'.format(target_tse) for target_tse in stock_id)
-        #    elif(target=='上櫃'):
-        #        channels = '|'.join('otc_{}.tw'.format(target_tse) for target_tse in stock_id)
         query_url = '{}?&ex_ch={}&json=1&delay=0&_={}'.format(twse_url, channels, timestamp)
 
         headers = {
@@ -46,9 +40,7 @@ class StockCrawling:
 
         # d: 日期, h: 最高, l: 最低, c:代號, n: 名稱, t:時間, o: 開盤, v: 交易量, z: 成交價
         # load JSON from TSE
-        #print(response.text)
         content = json.loads(response.text)
-        # print (content)
         self.req.cookies.clear()
         return content['msgArray'], content['queryTime']['sysTime']
         
