@@ -1,3 +1,4 @@
+from nis import cat
 from pickle import NONE
 import time,requests,json,random,logging
 import pandas as pd
@@ -43,17 +44,21 @@ class StockCrawling:
         headers = {'Accept-Language': 'zh-TW',
                    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36',
                    }
+        try:
+            self.req.get('http://mis.twse.com.tw/stock/index.jsp', headers=headers)
+            response = self.req.get(query_url)
+            if response.text.strip() == '':
+                return None
 
-        self.req.get('http://mis.twse.com.tw/stock/index.jsp', headers=headers)
-        response = self.req.get(query_url)
-        if response.text.strip() == '':
+            # d: 日期, h: 最高, l: 最低, c:代號, n: 名稱, t:時間, o: 開盤, v: 交易量, z: 成交價
+            # load JSON from TSE
+            content = json.loads(response.text)
+            self.req.cookies.clear()
+            return content['msgArray'], content['queryTime']['sysTime']
+        except Exception as e:
+            print("Request Error: {}",format(e))
+            self.logger.info("Request Error: {}",format(e))
             return None
-
-        # d: 日期, h: 最高, l: 最低, c:代號, n: 名稱, t:時間, o: 開盤, v: 交易量, z: 成交價
-        # load JSON from TSE
-        content = json.loads(response.text)
-        self.req.cookies.clear()
-        return content['msgArray'], content['queryTime']['sysTime']
         
     def init_db(self):
         self.db = pymysql.connect(
@@ -181,14 +186,25 @@ def mainFunction(crawling):
         now = dt.datetime.now()
         if now < crawling.STOPTIME:
             if times == 1:
+                current = stock_ids_1
                 data = crawling.show_realtime(*stock_ids_1)
             elif times == 2:
+                current = stock_ids_2
                 data = crawling.show_realtime(*stock_ids_2)
             elif times == 3:
+                current = stock_ids_3
                 data = crawling.show_realtime(*stock_ids_3)
             elif times == 4:
+                current = stock_ids_4
                 data = crawling.show_realtime(*stock_ids_4)
-            crawling.insert_sql(data)
+
+            if data == None:
+                crawling.logger.info("Try again!\n")
+                data = crawling.show_realtime(*current)
+
+            if data != None:
+                crawling.insert_sql(data)
+
             _sleep_time = random.randint(2, 4)
             # sleep
             time.sleep(_sleep_time)
@@ -202,7 +218,7 @@ def mainFunction(crawling):
 if __name__ == '__main__':
     Logger = logging.getLogger("Logger")
     Logger.setLevel(logging.INFO)
-    fh = logging.FileHandler(filename="./log/Stock_1017.log",mode='a')
+    fh = logging.FileHandler(filename="/var/log/TSE_Python/Stock_1017.log",mode='a')
     fh.setLevel(logging.INFO)
     fmt = logging.Formatter(fmt="%(asctime)s - %(name)s - %(levelname)-9s - %(filename)-8s : %(lineno)s line - %(message)s",datefmt="%Y/%m/%d %H:%M:%S")
     fh.setFormatter(fmt)
