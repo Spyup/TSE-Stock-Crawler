@@ -1,4 +1,6 @@
-import time,requests,json,random
+from nis import cat
+from pickle import NONE
+import time,requests,json,random,logging
 import pandas as pd
 import datetime as dt
 import pymysql
@@ -24,6 +26,8 @@ class StockCrawling:
         self.req = requests.session()
         self.dbName = "stocktest"
         self.dbtable = ""
+        self.STOPTIME = ""
+        self.logger = None
         self.init_db()
 
     def __del__(self):
@@ -40,17 +44,21 @@ class StockCrawling:
         headers = {'Accept-Language': 'zh-TW',
                    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36',
                    }
+        try:
+            self.req.get('http://mis.twse.com.tw/stock/index.jsp', headers=headers)
+            response = self.req.get(query_url)
+            if response.text.strip() == '':
+                return None
 
-        self.req.get('http://mis.twse.com.tw/stock/index.jsp', headers=headers)
-        response = self.req.get(query_url)
-        if response.text.strip() == '':
+            # d: 日期, h: 最高, l: 最低, c:代號, n: 名稱, t:時間, o: 開盤, v: 交易量, z: 成交價
+            # load JSON from TSE
+            content = json.loads(response.text)
+            self.req.cookies.clear()
+            return content['msgArray'], content['queryTime']['sysTime']
+        except Exception as e:
+            print("Request Error: {}",format(e))
+            self.logger.info("Request Error: {}",format(e))
             return None
-
-        # d: 日期, h: 最高, l: 最低, c:代號, n: 名稱, t:時間, o: 開盤, v: 交易量, z: 成交價
-        # load JSON from TSE
-        content = json.loads(response.text)
-        self.req.cookies.clear()
-        return content['msgArray'], content['queryTime']['sysTime']
         
     def init_db(self):
         self.db = pymysql.connect(
@@ -137,12 +145,12 @@ class StockCrawling:
 
                     records.append([_ct, _dt, _t, s_dict['c'], s_dict['n'], s_dict['z'], s_dict['tv'],
                     s_dict['h'], s_dict['l'], float(s_dict['y']), float(s_dict['o']), int(s_dict['v'])])
-
-
             except ValueError as _e:
                 print("ValueErr : " + str(_e))
+                self.logger.info("ValueError in insert_sql, Error:\n {} \n",format(_e))
             except KeyError as _e:
                 print("ID : " + str(s_dict['c'])+"，KeyErr : " + str(_e))
+                self.logger.info("KeyError in insert_sql, Error:\n {} \n",format(_e))
         
         try:
             cursor.executemany(sql, records)
@@ -150,6 +158,7 @@ class StockCrawling:
             print(cursor.rowcount, "Record inserted successfully into python_users table")
         except pymysql.Error as _e:
             print("Failed inserting record into python_users table {}".format(_e))
+            self.logger.info("pysql error in insert_sql, Error:\n {} \n",format(_e))
         finally:
             cursor.close()
 
@@ -163,7 +172,7 @@ class StockCrawling:
 
         return True
 
-if __name__ == '__main__':
+def mainFunction(crawling):
     # To ill stock IDs that you want.
     data = pd.read_csv("./NewListedStockID/urgent_0930.csv")
     
@@ -172,37 +181,66 @@ if __name__ == '__main__':
     stock_ids_2 = stock_ids[101:200]
     stock_ids_3 = stock_ids[201:300]
     stock_ids_4 = stock_ids[301:]
+    times = 1
+    while True:
+        now = dt.datetime.now()
+        if now < crawling.STOPTIME:
+            if times == 1:
+                current = stock_ids_1
+                data = crawling.show_realtime(*stock_ids_1)
+            elif times == 2:
+                current = stock_ids_2
+                data = crawling.show_realtime(*stock_ids_2)
+            elif times == 3:
+                current = stock_ids_3
+                data = crawling.show_realtime(*stock_ids_3)
+            elif times == 4:
+                current = stock_ids_4
+                data = crawling.show_realtime(*stock_ids_4)
+
+            if data == None:
+                crawling.logger.info("Try again!\n")
+                data = crawling.show_realtime(*current)
+
+            if data != None:
+                crawling.insert_sql(data)
+
+            _sleep_time = random.randint(2, 4)
+            # sleep
+            time.sleep(_sleep_time)
+            print("====== " + time.strftime("%H:%M:%S") + " ======")
+            times += 1
+            if times == 5:
+                times = 1
+        else:
+            break
+
+if __name__ == '__main__':
+    Logger = logging.getLogger("Logger")
+    Logger.setLevel(logging.INFO)
+    fh = logging.FileHandler(filename="/var/log/TSE_Python/Stock_1017.log",mode='a')
+    fh.setLevel(logging.INFO)
+    fmt = logging.Formatter(fmt="%(asctime)s - %(name)s - %(levelname)-9s - %(filename)-8s : %(lineno)s line - %(message)s",datefmt="%Y/%m/%d %H:%M:%S")
+    fh.setFormatter(fmt)
+    Logger.addHandler(fh)
     STOP_TIME_HOUR = 13
     STOP_TIME_MINUTE = 40
     NOW_DATE = dt.datetime.now()
     STOP_TIME = dt.datetime(year=NOW_DATE.year,month=NOW_DATE.month,day=NOW_DATE.day,hour=STOP_TIME_HOUR, minute=STOP_TIME_MINUTE)
     crawling = StockCrawling()
     crawling.dbtable = dt.date(year=NOW_DATE.year,month=NOW_DATE.month,day=NOW_DATE.day)
+    crawling.STOPTIME = STOP_TIME
+    crawling.logger = Logger
     crawling.create_table()
     try:
-        times = 1
-        while True:
-            now = dt.datetime.now()
-            if now < STOP_TIME:
-                if times == 1:
-                    data = crawling.show_realtime(*stock_ids_1)
-                elif times == 2:
-                    data = crawling.show_realtime(*stock_ids_2)
-                elif times == 3:
-                    data = crawling.show_realtime(*stock_ids_3)
-                elif times == 4:
-                    data = crawling.show_realtime(*stock_ids_4)
-                crawling.insert_sql(data)
-                _sleep_time = random.randint(2, 4)
-                # sleep
-                time.sleep(_sleep_time)
-                print("====== " + time.strftime("%H:%M:%S") + " ======")
-                times += 1
-                if times == 5:
-                    times = 1
-            else:
-                break
+        mainFunction()
     except pymysql.Error as e:
         print("Failed inserting record into python_users table {}".format(e))
+        crawling.logger.info("pymsql Error:\n {}\n",format(e))
+        mainFunction()
+    except Exception as e:
+        print("Exception {}",format(e))
+        crawling.logger.info("Exception {}",format(e))
+        mainFunction()
     finally:
         del crawling
