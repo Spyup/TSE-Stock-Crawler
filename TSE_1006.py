@@ -191,9 +191,9 @@ if __name__ == '__main__':
                 elif times == 4:
                     data = crawling.show_realtime(*stock_ids_4)
                 crawling.insert_sql(data)
-                _sleep_time = random.randint(2, 4)
+                #_sleep_time = random.randint(2, 4)
                 # sleep
-                time.sleep(_sleep_time)
+                time.sleep(5)
                 print("====== " + time.strftime("%H:%M:%S") + " ======")
                 times += 1
                 if times == 5:
