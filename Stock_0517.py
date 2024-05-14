@@ -1,4 +1,5 @@
 import time,requests,json,random
+import urllib3
 import pandas as pd
 import datetime as dt
 import pymysql
@@ -8,6 +9,7 @@ class StockCrawling:
     db = None
 
     def __init__(self):
+        urllib3.disable_warnings()
         self.req = requests.session()
         self.init_db()
 
@@ -25,8 +27,7 @@ class StockCrawling:
         headers = {'Accept-Language': 'zh-TW','User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36'}
 
         try:
-            self.req.get('http://mis.twse.com.tw/stock/index.jsp', headers=headers)
-            response = self.req.get(query_url)
+            response = self.req.get(query_url, headers=headers, verify=False)
             if response.text.strip() == '':
                 return None
 
@@ -96,7 +97,6 @@ class StockCrawling:
                     if(count_price>0):
                         last_price = cursor.fetchall()
                         last_price = float(last_price[0][0])
-                        print(last_price)
 
                     if(s_dict['z']!='-'):
                         s_dict['z'] = float(s_dict['z'])
@@ -121,14 +121,14 @@ class StockCrawling:
                     if(s_dict['o']!='-'):
                         s_dict['o'] = float(s_dict['o'])
                     else:
-                        s_dict['o'] = "NULL"
+                        s_dict['o'] = NULL
 
                     if(s_dict['v']!='-'):
-                        s_dict['v'] = float(s_dict['v'])
+                        s_dict['v'] = int(s_dict['v'])
                     else:
-                        s_dict['v'] = "NULL"
+                        s_dict['v'] = NULL
 
-                    records.append([_ct, _dt, _t, s_dict['c'], s_dict['n'], s_dict['z'], s_dict['tv'],s_dict['h'], s_dict['l'], float(s_dict['y']), float(s_dict['o']), int(s_dict['v'])])
+                    records.append([_ct, _dt, _t, s_dict['c'], s_dict['n'], s_dict['z'], s_dict['tv'],s_dict['h'], s_dict['l'], float(s_dict['y']), s_dict['o'], s_dict['v']])
 
             except ValueError as _e:
                 print("ValueErr : " + str(_e))
@@ -151,7 +151,6 @@ class StockCrawling:
         search_cursor.close()
         if(count!=0):
             return False
-
         return True
 
 if __name__ == '__main__':
